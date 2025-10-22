@@ -1,0 +1,8 @@
+{
+  "name": "Reno-AI Checklist",
+  "description": "An intelligent renovation checklist app that uses AI to transcribe your voice notes and analyze photos to generate a comprehensive project plan. Capture your ideas on the go, add inspirational links, and let the AI organize your renovation tasks.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
