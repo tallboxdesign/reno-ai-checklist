@@ -71,6 +71,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
             config: {
                 responseModalities: [Modality.AUDIO],
                 inputAudioTranscription: {},
+                systemInstruction: 'You are a voice transcription service. Your only task is to transcribe the user\'s audio input accurately. Do not generate any spoken response or have a conversation.',
             },
             callbacks: {
                 onopen: () => { console.log('Live session opened.'); },
