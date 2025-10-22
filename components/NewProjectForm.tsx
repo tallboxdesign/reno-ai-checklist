@@ -1,8 +1,10 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 // FIX: Removed `LiveSession` from import as it is not an exported member of the module.
 import { GoogleGenAI, Modality } from '@google/genai';
 import { generateChecklist, generateTitleFromNotes } from '../services/geminiService';
-import type { Project, ChecklistItem } from '../types';
+import { compressImage } from '../services/imageService';
+import type { Project } from '../types';
 import { MicIcon, StopIcon, CameraIcon, LinkIcon, CalendarIcon } from './icons';
 
 interface NewProjectFormProps {
@@ -11,15 +13,6 @@ interface NewProjectFormProps {
 
 // FIX: Inferred `LiveSession` type from the `ai.live.connect` method's return type for type safety.
 type LiveSession = Awaited<ReturnType<InstanceType<typeof GoogleGenAI>['live']['connect']>>;
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
 
 // FIX: Added encode function for robust base64 encoding of audio data, as recommended by guidelines.
 function encode(bytes: Uint8Array) {
@@ -35,8 +28,9 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [inspirationLink, setInspirationLink] = useState('');
-  const [photo, setPhoto] = useState<string | undefined>(undefined);
+  const [photo, setPhoto] = useState<{ thumbnail: string; full: string } | undefined>(undefined);
   const [notes, setNotes] = useState('');
+  const [details, setDetails] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
@@ -178,8 +172,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const base64 = await fileToBase64(file);
-      setPhoto(base64);
+      try {
+        const compressedPhoto = await compressImage(file);
+        setPhoto(compressedPhoto);
+      } catch (error) {
+        console.error("Failed to compress image:", error);
+        setError("There was an error processing the image.");
+      }
     }
   };
 
@@ -193,7 +192,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
     setIsProcessing(true);
 
     try {
-      const checklistItems = await generateChecklist(title, notes, photo);
+      const checklistItems = await generateChecklist(title, notes, details, photo?.full);
       const newProject: Project = {
         id: Date.now().toString(),
         title,
@@ -216,6 +215,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
       setInspirationLink('');
       setPhoto(undefined);
       setNotes('');
+      setDetails('');
     } catch (err: any) {
       setError(err.message || 'Failed to generate checklist.');
     } finally {
@@ -283,6 +283,18 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                 placeholder="Record your thoughts or type them here..."
             />
         </div>
+
+        <div>
+          <label htmlFor="details" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Additional Details (Optional)</label>
+          <textarea
+            id="details"
+            rows={3}
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            className="mt-1 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
+            placeholder="Add any specific measurements, materials, or other details..."
+          />
+        </div>
         
         <div className="flex items-center space-x-4">
             <button
@@ -303,7 +315,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
         {photo && (
           <div className="mt-4">
-            <img src={photo} alt="Renovation preview" className="max-h-48 rounded-lg shadow-md mx-auto" />
+            <img src={photo.thumbnail} alt="Renovation preview" className="max-h-48 rounded-lg shadow-md mx-auto" />
           </div>
         )}
 

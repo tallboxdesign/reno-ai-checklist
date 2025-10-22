@@ -25,7 +25,7 @@ const checklistSchema = {
   },
 };
 
-export const generateChecklist = async (title: string, notes: string, imageBase64?: string): Promise<Omit<ChecklistItem, 'id' | 'completed'>[]> => {
+export const generateChecklist = async (title: string, notes: string, details: string, imageBase64?: string): Promise<Omit<ChecklistItem, 'id' | 'completed'>[]> => {
   try {
     const currentDate = new Date().toLocaleString('en-US', {
         weekday: 'long',
@@ -39,13 +39,14 @@ export const generateChecklist = async (title: string, notes: string, imageBase6
 
     const promptParts: (string | { inlineData: { mimeType: string; data: string } })[] = [
         `You are a helpful renovation planning assistant. The current date is ${currentDate}. Use this information to resolve any relative date references (e.g., 'tomorrow', 'next week') in the user's notes.
-        Based on the project title, notes, and the provided image, generate a detailed checklist of tasks.
+        Based on the project title, notes, additional details, and the provided image, generate a detailed checklist of tasks.
         First, perform Optical Character Recognition (OCR) on the image to extract any text from documents, labels, or notes. 
         Then, analyze the visual content of the image (e.g., room layout, existing fixtures, condition of surfaces).
-        Combine the project title, your notes, the extracted text from the image, and the visual analysis to create a comprehensive checklist.
+        Combine the project title, your notes, details, the extracted text from the image, and the visual analysis to create a comprehensive checklist.
 
         Project Title: "${title}"
         Notes: "${notes}"
+        Additional Details: "${details}"
         
         Generate a JSON array of objects, where each object represents a checklist item with "task" and optional "details" fields.`,
     ];

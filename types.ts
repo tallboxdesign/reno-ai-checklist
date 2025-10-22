@@ -12,7 +12,10 @@ export interface Project {
   id: string;
   title: string;
   date: string;
-  photo?: string; // base64 encoded image
+  photo?: {
+    thumbnail: string; // For previews
+    full: string;      // For modal view
+  };
   inspirationLink?: string;
   checklist: ChecklistItem[];
   notes: string;
