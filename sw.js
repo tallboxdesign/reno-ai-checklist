@@ -1,19 +1,30 @@
-const CACHE_NAME = 'reno-ai-checklist-v1';
+
+const CACHE_NAME = 'reno-ai-checklist-v3'; // Bumped version to ensure update
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/index.tsx',
   '/manifest.json',
-  '/vite.svg'
+  '/vite.svg',
+  '/index.tsx',
+  '/App.tsx',
+  '/types.ts',
+  '/components/ChecklistItem.tsx',
+  '/components/icons.tsx',
+  '/components/NewProjectForm.tsx',
+  '/components/ProjectCard.tsx',
+  '/services/dbService.ts',
+  '/services/geminiService.ts'
 ];
 
-// On install, cache the static assets
+// On install, cache all critical static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('Opened cache and caching static assets');
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  self.skipWaiting(); // Force the new service worker to become active
 });
 
 // On activate, clean up old caches
@@ -24,17 +35,25 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (!allowedCaches.includes(cacheName)) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+        // Take control of all pages immediately
+        return self.clients.claim();
     })
   );
 });
 
 // On fetch, use a cache-first strategy.
-// This is a simple but effective strategy for offline-first apps.
 self.addEventListener('fetch', (event) => {
+  // Let the browser handle non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request).then((response) => {
       // If we have a cached response, return it.
@@ -44,23 +63,18 @@ self.addEventListener('fetch', (event) => {
 
       // If it's not in the cache, fetch it from the network.
       return fetch(event.request).then((networkResponse) => {
-        // Only cache successful GET requests to external resources.
-        // This will cache the CDN scripts on first load.
-        if (event.request.method === 'GET' && networkResponse.ok) {
-          // IMPORTANT: Clone the response. A response is a stream
-          // and because we want the browser to consume the response
-          // as well as the cache consuming the response, we need
-          // to clone it so we have two streams.
-          const responseToCache = networkResponse.clone();
+        // Clone the response because it's a stream that can only be consumed once.
+        const responseToCache = networkResponse.clone();
 
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
+        caches.open(CACHE_NAME).then((cache) => {
+          // Cache the new resource.
+          cache.put(event.request, responseToCache);
+        });
 
         return networkResponse;
       }).catch(error => {
         console.error('Fetching failed:', error);
+        // You could return a custom offline page here if you had one.
         throw error;
       });
     })
