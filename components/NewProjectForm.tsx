@@ -1,7 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 // FIX: Removed `LiveSession` from import as it is not an exported member of the module.
 import { GoogleGenAI, Modality } from '@google/genai';
-import { generateChecklist } from '../services/geminiService';
+import { generateChecklist, generateTitleFromNotes } from '../services/geminiService';
 import type { Project, ChecklistItem } from '../types';
 import { MicIcon, StopIcon, CameraIcon, LinkIcon, CalendarIcon } from './icons';
 
@@ -39,6 +39,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const [notes, setNotes] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const liveSessionRef = useRef<LiveSession | null>(null);
@@ -46,6 +47,12 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const audioStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const transcriptionRef = useRef<string>(''); // To accumulate transcription
+
+  // Use a ref to get the latest title value inside the 'onclose' callback to avoid stale state.
+  const titleRef = useRef(title);
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
 
   const startRecording = async () => {
     setError(null);
@@ -78,7 +85,24 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                     setError('An error occurred during recording.');
                     stopRecording();
                 },
-                onclose: () => { console.log('Live session closed.'); }
+                onclose: async () => { 
+                    console.log('Live session closed.');
+                    const finalTranscription = transcriptionRef.current;
+                    setNotes(finalTranscription);
+                    
+                    // If title is empty and we have a transcription, generate a title
+                    if (!titleRef.current.trim() && finalTranscription.trim()) {
+                        setIsGeneratingTitle(true);
+                        try {
+                            const generatedTitle = await generateTitleFromNotes(finalTranscription);
+                            setTitle(generatedTitle);
+                        } catch (err) {
+                            console.error("Failed to generate title", err);
+                        } finally {
+                            setIsGeneratingTitle(false);
+                        }
+                    }
+                }
             }
         });
 
@@ -127,9 +151,6 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
     audioContextRef.current?.close();
     audioContextRef.current = null;
-
-    // Set the accumulated transcription into the notes field
-    setNotes(transcriptionRef.current);
 
   }, []);
 
@@ -190,9 +211,10 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100"
-            placeholder="e.g., Kitchen Renovation"
+            className="mt-1 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
+            placeholder={isGeneratingTitle ? "Generating title from notes..." : "e.g., Kitchen Renovation"}
             required
+            disabled={isGeneratingTitle}
           />
         </div>
 
@@ -267,7 +289,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={isProcessing || isRecording}
+            disabled={isProcessing || isRecording || isGeneratingTitle}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-slate-400 disabled:cursor-not-allowed"
           >
             {isProcessing ? 'Generating...' : '✨ Generate AI Checklist'}

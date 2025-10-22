@@ -27,8 +27,19 @@ const checklistSchema = {
 
 export const generateChecklist = async (title: string, notes: string, imageBase64?: string): Promise<Omit<ChecklistItem, 'id' | 'completed'>[]> => {
   try {
+    const currentDate = new Date().toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    });
+
     const promptParts: (string | { inlineData: { mimeType: string; data: string } })[] = [
-        `You are a helpful renovation planning assistant. Based on the project title, notes, and the provided image, generate a detailed checklist of tasks.
+        `You are a helpful renovation planning assistant. The current date is ${currentDate}. Use this information to resolve any relative date references (e.g., 'tomorrow', 'next week') in the user's notes.
+        Based on the project title, notes, and the provided image, generate a detailed checklist of tasks.
         First, perform Optical Character Recognition (OCR) on the image to extract any text from documents, labels, or notes. 
         Then, analyze the visual content of the image (e.g., room layout, existing fixtures, condition of surfaces).
         Combine the project title, your notes, the extracted text from the image, and the visual analysis to create a comprehensive checklist.
@@ -70,5 +81,28 @@ export const generateChecklist = async (title: string, notes: string, imageBase6
   } catch (error) {
     console.error("Error generating checklist:", error);
     throw new Error("Failed to generate checklist. Please try again.");
+  }
+};
+
+export const generateTitleFromNotes = async (notes: string): Promise<string> => {
+  if (!notes.trim()) {
+    return '';
+  }
+  try {
+    const prompt = `Based on the following project notes, generate a concise and descriptive project title. The title should be no more than 5-7 words. Respond with only the title text and nothing else.
+    
+    Notes: "${notes}"`;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    });
+
+    // Trim and remove quotes if the AI includes them
+    return response.text.trim().replace(/^"|"$/g, '');
+  } catch (error) {
+    console.error("Error generating title:", error);
+    // Return a generic title or empty string on failure to not block the user.
+    return "New Project from Notes";
   }
 };
