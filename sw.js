@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'reno-ai-checklist-v4'; // Bumped version to ensure update
+const CACHE_NAME = 'reno-ai-checklist-v6'; // Bumped version to ensure update
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -13,6 +12,7 @@ const STATIC_ASSETS = [
   '/components/NewProjectForm.tsx',
   '/components/ProjectCard.tsx',
   '/components/ImageModal.tsx',
+  '/components/ShareModal.tsx',
   '/services/dbService.ts',
   '/services/geminiService.ts',
   '/services/imageService.ts'

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const MicIcon = ({ className }: { className?: string }) => (
@@ -33,6 +32,18 @@ export const CalendarIcon = ({ className }: { className?: string }) => (
 
 export const TrashIcon = ({ className }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
-        <path fillRule="evenodd" d="M16.5 6a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0 0 1h8a.5.5 0 0 0 .5-.5zM8 9a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1zm8 12.5a.5.5 0 0 0 .5-.5V9h-1v12a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5V9h-1v12a1.5 1.5 0 0 0 1.5 1.5h7zM6 9h12V7H6v2z" clipRule="evenodd" />
+        <path fillRule="evenodd" d="M16.5 6a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0 0 1h8a.5.5 0 0 0 .5-.5zM8 9a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1zm8 12.5a.5.5 0 0 0 .5-.5V9h-1v12a.5.5 0 0 1-.5-.5h-7a.5.5 0 0 1-.5-.5V9h-1v12a1.5 1.5 0 0 0 1.5 1.5h7zM6 9h12V7H6v2z" clipRule="evenodd" />
+    </svg>
+);
+
+export const CurrencyIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.59 3.48 3.58 3.96 2.04.48 3 .88 3 2.12 0 1.03-.9 1.77-2.7 1.77-2.07 0-2.65-.91-2.65-2.1h-2.2c.08 2.02 1.38 3.33 3.55 3.83V21h3v-2.15c2.17-.48 3.5-1.65 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+    </svg>
+);
+
+export const ShareIcon = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"/>
     </svg>
 );

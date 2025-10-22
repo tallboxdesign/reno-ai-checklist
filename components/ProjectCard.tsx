@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import type { Project, ProjectStatus } from '../types';
 import ChecklistItem from './ChecklistItem';
 import ImageModal from './ImageModal';
+import ShareModal from './ShareModal';
 import { compressImage } from '../services/imageService';
-import { CalendarIcon, LinkIcon, TrashIcon, CameraIcon } from './icons';
+import { CalendarIcon, LinkIcon, TrashIcon, CameraIcon, ShareIcon } from './icons';
 
 interface ProjectCardProps {
   project: Project;
@@ -20,6 +20,7 @@ const statusStyles: Record<ProjectStatus, string> = {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onDeleteProject }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   const handleToggleItem = (itemId: string) => {
     const updatedChecklist = project.checklist.map((item) =>
@@ -48,6 +49,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
   const completedCount = project.checklist.filter(item => item.completed).length;
   const totalCount = project.checklist.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  const formatCurrency = (amount?: number): string => {
+    if (amount === undefined || amount === null) {
+      return 'N/A';
+    }
+    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  };
+
+  const actualCostColor = project.estimatedCost && project.actualCost && project.actualCost > project.estimatedCost
+    ? 'text-rose-600 dark:text-rose-400'
+    : 'text-emerald-600 dark:text-emerald-400';
 
   return (
     <>
@@ -105,6 +117,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
                   <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
               </div>
           </div>
+          
+          {(project.estimatedCost || project.actualCost) && (
+            <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+              <h4 className="font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Budget</h4>
+              <div className="flex justify-between items-center text-sm">
+                  <div className="text-zinc-500 dark:text-zinc-400">
+                      <span className="font-medium">Estimated:</span>
+                      <span className="ml-2 font-semibold text-zinc-700 dark:text-zinc-200">{formatCurrency(project.estimatedCost)}</span>
+                  </div>
+                  <div className="text-zinc-500 dark:text-zinc-400">
+                      <span className="font-medium">Actual:</span>
+                      <span className={`ml-2 font-semibold ${actualCostColor}`}>{formatCurrency(project.actualCost)}</span>
+                  </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4 flex-grow flex flex-col">
             <h4 className="font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Checklist</h4>
@@ -129,14 +157,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
                       <option value="Completed">Completed</option>
                   </select>
               </div>
-               <button onClick={() => onDeleteProject(project.id)} className="text-zinc-400 hover:text-rose-500 transition-colors p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-500/10">
-                  <TrashIcon className="w-5 h-5" />
-              </button>
+               <div className="flex items-center space-x-1">
+                 <button 
+                    onClick={() => setIsShareModalOpen(true)} 
+                    className="text-zinc-400 hover:text-sky-500 transition-colors p-2 rounded-full hover:bg-sky-50 dark:hover:bg-sky-500/10" 
+                    aria-label="Share project"
+                  >
+                    <ShareIcon className="w-5 h-5" />
+                 </button>
+                 <button 
+                    onClick={() => onDeleteProject(project.id)} 
+                    className="text-zinc-400 hover:text-rose-500 transition-colors p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-500/10" 
+                    aria-label="Delete project"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                 </button>
+               </div>
           </div>
         </div>
       </div>
       {isModalOpen && project.photo && (
         <ImageModal imageUrl={project.photo.full} onClose={() => setIsModalOpen(false)} />
+      )}
+      {isShareModalOpen && (
+        <ShareModal project={project} onClose={() => setIsShareModalOpen(false)} />
       )}
     </>
   );

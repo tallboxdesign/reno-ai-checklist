@@ -9,7 +9,7 @@ export interface ChecklistItem {
 export type ProjectStatus = 'Idea' | 'In Progress' | 'Completed';
 
 export interface Project {
-  id: string;
+  id:string;
   title: string;
   date: string;
   photo?: {
@@ -20,4 +20,6 @@ export interface Project {
   checklist: ChecklistItem[];
   notes: string;
   status: ProjectStatus;
+  estimatedCost?: number;
+  actualCost?: number;
 }

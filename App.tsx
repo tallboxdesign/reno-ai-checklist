@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Project, ProjectStatus } from './types';
 import NewProjectForm from './components/NewProjectForm';
@@ -26,9 +25,8 @@ const App: React.FC = () => {
   }, []);
 
   const addProject = (project: Project) => {
-    const projectWithStatus: Project = { ...project, status: 'In Progress' };
-    setProjects((prevProjects) => [projectWithStatus, ...prevProjects]);
-    saveProject(projectWithStatus).catch(error => {
+    setProjects((prevProjects) => [project, ...prevProjects]);
+    saveProject(project).catch(error => {
         console.error("Could not save new project to IndexedDB", error);
         // Optionally, implement rollback logic here
     });
@@ -84,7 +82,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans">
       <header className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-emerald-500">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-emerald-500">
             Reno-AI Checklist
           </h1>
           <p className="text-center text-zinc-500 dark:text-zinc-400 mt-1">Your AI-powered renovation planner</p>
@@ -95,9 +93,9 @@ const App: React.FC = () => {
         <NewProjectForm onAddProject={addProject} />
         
         <div className="mt-12">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">My Projects</h2>
-                <div className="flex items-center space-x-2 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-full">
+                <div className="flex items-center space-x-2 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-full self-start md:self-auto">
                     <FilterButton status="All" label="All" />
                     <FilterButton status="Idea" label="Idea" />
                     <FilterButton status="In Progress" label="In Progress" />

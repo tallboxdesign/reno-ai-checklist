@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 // FIX: Removed `LiveSession` from import as it is not an exported member of the module.
-import { GoogleGenAI, Modality } from '@google/genai';
-import { generateChecklist, generateTitleFromNotes } from '../services/geminiService';
+import { GoogleGenAI, Modality, FunctionDeclaration, Type } from '@google/genai';
+import { generateChecklist, generateTitleFromNotes, estimateProjectCost } from '../services/geminiService';
 import { compressImage } from '../services/imageService';
 import type { Project } from '../types';
-import { MicIcon, StopIcon, CameraIcon, LinkIcon, CalendarIcon } from './icons';
+import { MicIcon, StopIcon, CameraIcon, LinkIcon, CalendarIcon, CurrencyIcon } from './icons';
 
 interface NewProjectFormProps {
   onAddProject: (project: Project) => void;
@@ -24,6 +23,21 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
+const setTargetDateFunctionDeclaration: FunctionDeclaration = {
+  name: 'setTargetDate',
+  description: 'Sets the target completion date for the project based on user speech.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      date: {
+        type: Type.STRING,
+        description: 'The target date in YYYY-MM-DD format.',
+      },
+    },
+    required: ['date'],
+  },
+};
+
 const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -31,9 +45,12 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const [photo, setPhoto] = useState<{ thumbnail: string; full: string } | undefined>(undefined);
   const [notes, setNotes] = useState('');
   const [details, setDetails] = useState('');
+  const [estimatedCost, setEstimatedCost] = useState('');
+  const [actualCost, setActualCost] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [isEstimatingCost, setIsEstimatingCost] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const liveSessionRef = useRef<LiveSession | null>(null);
@@ -93,12 +110,25 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
         
+        const currentDate = new Date().toLocaleDateString('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
+        const systemInstruction = `You are an intelligent renovation planning assistant. Your primary task is to accurately transcribe the user's speech.
+As you transcribe, identify if the user mentions a target date for their project (e.g., "next Friday", "the end of the month", "August 1st").
+If a date is mentioned, you MUST call the 'setTargetDate' function with the resolved date in YYYY-MM-DD format.
+Do not generate any spoken response or have a conversation. Only transcribe and call the function when necessary.
+Today's date is ${currentDate}.`;
+
         const sessionPromise = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
             config: {
                 responseModalities: [Modality.AUDIO],
                 inputAudioTranscription: {},
-                systemInstruction: 'You are a voice transcription service. Your only task is to transcribe the user\'s audio input accurately. Do not generate any spoken response or have a conversation.',
+                tools: [{ functionDeclarations: [setTargetDateFunctionDeclaration] }],
+                systemInstruction: systemInstruction,
             },
             callbacks: {
                 onopen: () => { console.log('Live session opened.'); },
@@ -109,6 +139,27 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                         transcriptionRef.current += newText;
                         // Update UI with live transcription
                         setNotes(prevNotes => prevNotes + newText);
+                    }
+                    if (message.toolCall) {
+                        for (const fc of message.toolCall.functionCalls) {
+                            if (fc.name === 'setTargetDate' && fc.args.date) {
+                                const newDate = fc.args.date as string;
+                                // Simple validation for YYYY-MM-DD format
+                                if (/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+                                    setDate(newDate);
+                                }
+                                // Respond to the model that the function was handled
+                                sessionPromise.then(session => {
+                                    session.sendToolResponse({
+                                        functionResponses: {
+                                            id: fc.id,
+                                            name: fc.name,
+                                            response: { result: "Date has been set." },
+                                        }
+                                    });
+                                });
+                            }
+                        }
                     }
                 },
                 onerror: (e) => {
@@ -182,6 +233,27 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
     }
   };
 
+  const handleEstimateCost = async () => {
+    if (!title.trim() || !notes.trim()) {
+      setError("Please provide a title and notes before estimating the cost.");
+      return;
+    }
+    setError(null);
+    setIsEstimatingCost(true);
+    try {
+      const cost = await estimateProjectCost(title, notes, details, photo?.full);
+      if (cost !== null) {
+        setEstimatedCost(cost.toString());
+      } else {
+        setError("The AI could not provide a cost estimate for this project.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to get cost estimate.");
+    } finally {
+      setIsEstimatingCost(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !notes.trim()) {
@@ -200,8 +272,9 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         inspirationLink,
         photo,
         notes,
-        // FIX: Added the required 'status' property to align with the 'Project' type.
         status: 'In Progress',
+        estimatedCost: estimatedCost ? parseFloat(estimatedCost) : undefined,
+        actualCost: actualCost ? parseFloat(actualCost) : undefined,
         checklist: checklistItems.map((item, index) => ({
           ...item,
           id: `${Date.now()}-${index}`,
@@ -216,6 +289,8 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
       setPhoto(undefined);
       setNotes('');
       setDetails('');
+      setEstimatedCost('');
+      setActualCost('');
     } catch (err: any) {
       setError(err.message || 'Failed to generate checklist.');
     } finally {
@@ -225,7 +300,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
   return (
     <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-lg mb-8 max-w-2xl mx-auto border border-zinc-200 dark:border-zinc-800">
-      <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">Create New Project</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">Create New Project</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Project Title</label>
@@ -270,6 +345,38 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                 />
             </div>
            </div>
+            <div>
+              <label htmlFor="estimatedCost" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Estimated Cost ($)</label>
+              <div className="relative mt-1">
+                  <CurrencyIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"/>
+                  <input
+                  type="number"
+                  id="estimatedCost"
+                  value={estimatedCost}
+                  onChange={(e) => setEstimatedCost(e.target.value)}
+                  className="pl-10 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
+                  placeholder="e.g., 5000"
+                  min="0"
+                  step="0.01"
+                  />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="actualCost" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Actual Cost ($)</label>
+              <div className="relative mt-1">
+                  <CurrencyIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"/>
+                  <input
+                  type="number"
+                  id="actualCost"
+                  value={actualCost}
+                  onChange={(e) => setActualCost(e.target.value)}
+                  className="pl-10 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
+                  placeholder="e.g., 4850.50"
+                  min="0"
+                  step="0.01"
+                  />
+              </div>
+            </div>
         </div>
 
         <div>
@@ -296,7 +403,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
           />
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-4">
             <button
                 type="button"
                 onClick={isRecording ? stopRecording : startRecording}
@@ -311,6 +418,14 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                 <span>{photo ? 'Change Photo' : 'Add Photo'}</span>
                 <input id="photo-upload" name="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
             </label>
+            <button
+              type="button"
+              onClick={handleEstimateCost}
+              disabled={isEstimatingCost || isRecording}
+              className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-zinc-400 disabled:cursor-not-allowed"
+            >
+              {isEstimatingCost ? 'Estimating...' : '🤖 Estimate Cost'}
+            </button>
         </div>
 
         {photo && (
@@ -324,7 +439,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         <div className="pt-2">
           <button
             type="submit"
-            disabled={isProcessing || isRecording || isGeneratingTitle}
+            disabled={isProcessing || isRecording || isGeneratingTitle || isEstimatingCost}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:bg-zinc-400 disabled:cursor-not-allowed"
           >
             {isProcessing ? 'Generating...' : '✨ Generate AI Checklist'}

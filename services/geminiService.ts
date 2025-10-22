@@ -107,3 +107,45 @@ export const generateTitleFromNotes = async (notes: string): Promise<string> => 
     return "New Project from Notes";
   }
 };
+
+export const estimateProjectCost = async (title: string, notes: string, details: string, imageBase64?: string): Promise<number | null> => {
+  try {
+    const promptParts: (string | { inlineData: { mimeType: string; data: string } })[] = [
+      `As a renovation cost estimator, analyze the following project details. 
+      Provide a single numerical estimate for the total cost in USD.
+      Your response must be ONLY the number, without any currency symbols, commas, or explanatory text.
+      For example, for a fifteen hundred dollar estimate, respond with "1500".
+
+      Project Title: "${title}"
+      Notes: "${notes}"
+      Additional Details: "${details}"`,
+    ];
+
+    if (imageBase64) {
+      const mimeType = imageBase64.split(';')[0].split(':')[1];
+      const data = imageBase64.split(',')[1];
+      promptParts.push({
+        inlineData: {
+          mimeType,
+          data,
+        },
+      });
+    }
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: { parts: promptParts.map(part => typeof part === 'string' ? { text: part } : part) },
+    });
+
+    const costText = response.text.trim();
+    // Remove any non-numeric characters except for a decimal point
+    const sanitizedCost = costText.replace(/[^0-9.]/g, '');
+    const cost = parseFloat(sanitizedCost);
+
+    return isNaN(cost) ? null : cost;
+
+  } catch (error) {
+    console.error("Error estimating project cost:", error);
+    throw new Error("Failed to estimate cost. The AI may not have been able to provide an estimate for this project.");
+  }
+};
