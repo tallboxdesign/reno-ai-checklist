@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { ChecklistItem } from '../types';
 
@@ -30,8 +29,13 @@ export const generateChecklist = async (title: string, notes: string, imageBase6
   try {
     const promptParts: (string | { inlineData: { mimeType: string; data: string } })[] = [
         `You are a helpful renovation planning assistant. Based on the project title, notes, and the provided image, generate a detailed checklist of tasks.
+        First, perform Optical Character Recognition (OCR) on the image to extract any text from documents, labels, or notes. 
+        Then, analyze the visual content of the image (e.g., room layout, existing fixtures, condition of surfaces).
+        Combine the project title, your notes, the extracted text from the image, and the visual analysis to create a comprehensive checklist.
+
         Project Title: "${title}"
         Notes: "${notes}"
+        
         Generate a JSON array of objects, where each object represents a checklist item with "task" and optional "details" fields.`,
     ];
 

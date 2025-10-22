@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 // FIX: Removed `LiveSession` from import as it is not an exported member of the module.
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Modality } from '@google/genai';
 import { generateChecklist } from '../services/geminiService';
 import type { Project, ChecklistItem } from '../types';
 import { MicIcon, StopIcon, CameraIcon, LinkIcon, CalendarIcon } from './icons';
@@ -46,11 +45,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const transcriptionRef = useRef<string>(''); // To accumulate transcription
 
   const startRecording = async () => {
     setError(null);
     setIsRecording(true);
     setNotes('');
+    transcriptionRef.current = ''; // Reset accumulator
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -61,13 +62,15 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         const sessionPromise = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
             config: {
+                responseModalities: [Modality.AUDIO],
                 inputAudioTranscription: {},
             },
             callbacks: {
                 onopen: () => { console.log('Live session opened.'); },
                 onmessage: (message) => {
                     if (message.serverContent?.inputTranscription) {
-                        setNotes(prev => prev + message.serverContent.inputTranscription.text);
+                        // Accumulate transcription in the background
+                        transcriptionRef.current += message.serverContent.inputTranscription.text;
                     }
                 },
                 onerror: (e) => {
@@ -124,6 +127,9 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
     audioContextRef.current?.close();
     audioContextRef.current = null;
+
+    // Set the accumulated transcription into the notes field
+    setNotes(transcriptionRef.current);
 
   }, []);
 
