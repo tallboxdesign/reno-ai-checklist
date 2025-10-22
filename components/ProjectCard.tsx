@@ -28,6 +28,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
     );
     onUpdateProject({ ...project, checklist: updatedChecklist });
   };
+
+  const handleUpdateItem = (itemId: string, updates: { task: string; details?: string }) => {
+    const updatedChecklist = project.checklist.map((item) =>
+      item.id === itemId ? { ...item, ...updates } : item
+    );
+    onUpdateProject({ ...project, checklist: updatedChecklist });
+  };
   
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value as ProjectStatus;
@@ -138,7 +145,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
             <h4 className="font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Checklist</h4>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-2 flex-grow">
               {project.checklist.length > 0 ? project.checklist.map((item) => (
-                <ChecklistItem key={item.id} item={item} onToggle={handleToggleItem} />
+                <ChecklistItem 
+                    key={item.id} 
+                    item={item} 
+                    onToggle={handleToggleItem}
+                    onUpdate={handleUpdateItem}
+                />
               )) : <p className="text-sm text-zinc-500 dark:text-zinc-400">No checklist items yet.</p>}
             </div>
           </div>
