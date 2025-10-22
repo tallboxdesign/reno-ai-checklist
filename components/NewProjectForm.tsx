@@ -54,6 +54,39 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
     titleRef.current = title;
   }, [title]);
 
+  const stopRecording = useCallback(() => {
+    // This function can be called by user action or by an error handler.
+    // We make it safe to be called multiple times.
+    if (!isRecording) return;
+
+    // Immediately update UI to reflect stopping
+    setIsRecording(false);
+    
+    // Stop capturing and sending audio data to the model
+    if (scriptProcessorRef.current) {
+        scriptProcessorRef.current.disconnect();
+        scriptProcessorRef.current = null;
+    }
+    if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(track => track.stop());
+        audioStreamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(console.error);
+        audioContextRef.current = null;
+    }
+
+    // After stopping audio input, wait a moment for any in-flight
+    // transcription responses to arrive from the server before closing the connection.
+    // This helps prevent truncated transcriptions.
+    setTimeout(() => {
+        if (liveSessionRef.current) {
+            liveSessionRef.current.close();
+            liveSessionRef.current = null;
+        }
+    }, 2000); // 2-second delay for graceful shutdown
+  }, [isRecording]);
+
   const startRecording = async () => {
     setError(null);
     setIsRecording(true);
@@ -77,8 +110,11 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                 onopen: () => { console.log('Live session opened.'); },
                 onmessage: (message) => {
                     if (message.serverContent?.inputTranscription) {
-                        // Accumulate transcription in the background
-                        transcriptionRef.current += message.serverContent.inputTranscription.text;
+                        const newText = message.serverContent.inputTranscription.text;
+                        // Accumulate full transcription in a ref
+                        transcriptionRef.current += newText;
+                        // Update UI with live transcription
+                        setNotes(prevNotes => prevNotes + newText);
                     }
                 },
                 onerror: (e) => {
@@ -89,6 +125,7 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
                 onclose: async () => { 
                     console.log('Live session closed.');
                     const finalTranscription = transcriptionRef.current;
+                    // Ensure the final state is consistent with the full transcription
                     setNotes(finalTranscription);
                     
                     // If title is empty and we have a transcription, generate a title
@@ -137,23 +174,6 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         setIsRecording(false);
     }
   };
-
-  const stopRecording = useCallback(() => {
-    setIsRecording(false);
-    
-    liveSessionRef.current?.close();
-    liveSessionRef.current = null;
-    
-    scriptProcessorRef.current?.disconnect();
-    scriptProcessorRef.current = null;
-
-    audioStreamRef.current?.getTracks().forEach(track => track.stop());
-    audioStreamRef.current = null;
-
-    audioContextRef.current?.close();
-    audioContextRef.current = null;
-
-  }, []);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

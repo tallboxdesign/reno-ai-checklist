@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Project } from './types';
 import NewProjectForm from './components/NewProjectForm';
 import ProjectCard from './components/ProjectCard';
-import { getProjects, saveProjects } from './services/dbService';
+import { getProjects, saveProject, deleteProjectDB } from './services/dbService';
 
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -23,28 +23,28 @@ const App: React.FC = () => {
     loadProjects();
   }, []);
 
-  // Save projects to IndexedDB whenever they change
-  useEffect(() => {
-    if (!isLoading) {
-      saveProjects(projects).catch(error => {
-        console.error("Could not save projects to IndexedDB", error);
-      });
-    }
-  }, [projects, isLoading]);
-
-
   const addProject = (project: Project) => {
     setProjects((prevProjects) => [project, ...prevProjects]);
+    saveProject(project).catch(error => {
+        console.error("Could not save new project to IndexedDB", error);
+        // Optionally, implement rollback logic here
+    });
   };
 
   const updateProject = (updatedProject: Project) => {
     setProjects((prevProjects) =>
       prevProjects.map((p) => (p.id === updatedProject.id ? updatedProject : p))
     );
+    saveProject(updatedProject).catch(error => {
+        console.error("Could not update project in IndexedDB", error);
+    });
   };
   
   const deleteProject = (id: string) => {
     setProjects((prevProjects) => prevProjects.filter((p) => p.id !== id));
+    deleteProjectDB(id).catch(error => {
+        console.error("Could not delete project from IndexedDB", error);
+    });
   };
 
   if (isLoading) {
