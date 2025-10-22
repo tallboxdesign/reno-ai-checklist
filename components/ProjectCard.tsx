@@ -1,5 +1,6 @@
+
 import React from 'react';
-import type { Project, ChecklistItem as ChecklistItemType } from '../types';
+import type { Project, ChecklistItem as ChecklistItemType, ProjectStatus } from '../types';
 import ChecklistItem from './ChecklistItem';
 import { CalendarIcon, LinkIcon, TrashIcon } from './icons';
 
@@ -9,6 +10,12 @@ interface ProjectCardProps {
   onDeleteProject: (id: string) => void;
 }
 
+const statusStyles: Record<ProjectStatus, string> = {
+    'Idea': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+    'In Progress': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
+    'Completed': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300'
+};
+
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onDeleteProject }) => {
   const handleToggleItem = (itemId: string) => {
     const updatedChecklist = project.checklist.map((item) =>
@@ -17,27 +24,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
     onUpdateProject({ ...project, checklist: updatedChecklist });
   };
   
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value as ProjectStatus;
+    onUpdateProject({ ...project, status: newStatus });
+  };
+
   const completedCount = project.checklist.filter(item => item.completed).length;
   const totalCount = project.checklist.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 flex flex-col">
       {project.photo && (
         <img className="w-full h-48 object-cover" src={project.photo} alt={project.title} />
       )}
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-grow">
         <div className="flex justify-between items-start">
-            <div>
-                <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{project.title}</h3>
+            <div className="flex-1">
+                <div className="flex items-start justify-between">
+                    <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-100 pr-2">{project.title}</h3>
+                    <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusStyles[project.status]}`}>
+                        {project.status}
+                    </span>
+                </div>
                 <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                     <CalendarIcon className="w-4 h-4 mr-2"/>
                     <span>Target Date: {new Date(project.date).toLocaleDateString()}</span>
                 </div>
             </div>
-            <button onClick={() => onDeleteProject(project.id)} className="text-zinc-400 hover:text-rose-500 transition-colors">
-                <TrashIcon className="w-6 h-6" />
-            </button>
         </div>
 
         {project.inspirationLink && (
@@ -57,15 +71,33 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
             </div>
         </div>
 
-        <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+        <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4 flex-grow flex flex-col">
           <h4 className="font-semibold text-zinc-700 dark:text-zinc-200 mb-2">Checklist</h4>
-          <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-            {project.checklist.map((item) => (
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2 flex-grow">
+            {project.checklist.length > 0 ? project.checklist.map((item) => (
               <ChecklistItem key={item.id} item={item} onToggle={handleToggleItem} />
-            ))}
+            )) : <p className="text-sm text-zinc-500 dark:text-zinc-400">No checklist items yet.</p>}
           </div>
         </div>
 
+        <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+            <div>
+                <label htmlFor={`status-${project.id}`} className="sr-only">Change Status</label>
+                <select 
+                    id={`status-${project.id}`}
+                    value={project.status} 
+                    onChange={handleStatusChange}
+                    className="text-sm rounded-md border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:ring-sky-500 focus:border-sky-500"
+                >
+                    <option value="Idea">Idea</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+             <button onClick={() => onDeleteProject(project.id)} className="text-zinc-400 hover:text-rose-500 transition-colors p-2 rounded-full hover:bg-rose-50 dark:hover:bg-rose-500/10">
+                <TrashIcon className="w-5 h-5" />
+            </button>
+        </div>
       </div>
     </div>
   );

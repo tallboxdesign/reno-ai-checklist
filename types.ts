@@ -6,6 +6,8 @@ export interface ChecklistItem {
   details?: string;
 }
 
+export type ProjectStatus = 'Idea' | 'In Progress' | 'Completed';
+
 export interface Project {
   id: string;
   title: string;
@@ -14,4 +16,5 @@ export interface Project {
   inspirationLink?: string;
   checklist: ChecklistItem[];
   notes: string;
+  status: ProjectStatus;
 }

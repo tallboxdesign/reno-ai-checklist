@@ -201,6 +201,8 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         inspirationLink,
         photo,
         notes,
+        // FIX: Added the required 'status' property to align with the 'Project' type.
+        status: 'In Progress',
         checklist: checklistItems.map((item, index) => ({
           ...item,
           id: `${Date.now()}-${index}`,

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import type { Project } from './types';
+import type { Project, ProjectStatus } from './types';
 import NewProjectForm from './components/NewProjectForm';
 import ProjectCard from './components/ProjectCard';
 import { getProjects, saveProject, deleteProjectDB } from './services/dbService';
@@ -7,6 +8,7 @@ import { getProjects, saveProject, deleteProjectDB } from './services/dbService'
 const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<ProjectStatus | 'All'>('All');
 
   // Load projects from IndexedDB on initial mount
   useEffect(() => {
@@ -24,8 +26,9 @@ const App: React.FC = () => {
   }, []);
 
   const addProject = (project: Project) => {
-    setProjects((prevProjects) => [project, ...prevProjects]);
-    saveProject(project).catch(error => {
+    const projectWithStatus: Project = { ...project, status: 'In Progress' };
+    setProjects((prevProjects) => [projectWithStatus, ...prevProjects]);
+    saveProject(projectWithStatus).catch(error => {
         console.error("Could not save new project to IndexedDB", error);
         // Optionally, implement rollback logic here
     });
@@ -46,6 +49,23 @@ const App: React.FC = () => {
         console.error("Could not delete project from IndexedDB", error);
     });
   };
+
+  const filteredProjects = projects.filter(project => 
+    activeFilter === 'All' || project.status === activeFilter
+  );
+
+  const FilterButton: React.FC<{ status: ProjectStatus | 'All'; label: string }> = ({ status, label }) => (
+    <button
+      onClick={() => setActiveFilter(status)}
+      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+        activeFilter === status
+          ? 'bg-sky-600 text-white'
+          : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   if (isLoading) {
     return (
@@ -75,10 +95,19 @@ const App: React.FC = () => {
         <NewProjectForm onAddProject={addProject} />
         
         <div className="mt-12">
-            <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 mb-6">My Projects</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">My Projects</h2>
+                <div className="flex items-center space-x-2 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-full">
+                    <FilterButton status="All" label="All" />
+                    <FilterButton status="Idea" label="Idea" />
+                    <FilterButton status="In Progress" label="In Progress" />
+                    <FilterButton status="Completed" label="Completed" />
+                </div>
+            </div>
+
             {projects.length > 0 ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {projects.map((project) => (
+                    {filteredProjects.map((project) => (
                     <ProjectCard 
                         key={project.id} 
                         project={project}
@@ -91,6 +120,12 @@ const App: React.FC = () => {
                 <div className="text-center py-16 px-6 bg-white dark:bg-zinc-900 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700">
                     <h3 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200">No projects yet!</h3>
                     <p className="text-zinc-500 dark:text-zinc-400 mt-2">Use the form above to create your first renovation project.</p>
+                </div>
+            )}
+            {projects.length > 0 && filteredProjects.length === 0 && (
+                <div className="text-center py-16 px-6 bg-white dark:bg-zinc-900 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700">
+                    <h3 className="text-xl font-semibold text-zinc-700 dark:text-zinc-200">No projects match the filter</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">Select another status to see your other projects.</p>
                 </div>
             )}
         </div>
