@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reno-ai-checklist-v6'; // Bumped version to ensure update
+const CACHE_NAME = 'reno-ai-checklist-v7'; // Bumped version for update
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -15,7 +15,8 @@ const STATIC_ASSETS = [
   '/components/ShareModal.tsx',
   '/services/dbService.ts',
   '/services/geminiService.ts',
-  '/services/imageService.ts'
+  '/services/imageService.ts',
+  '/services/notificationService.ts' // Added new service
 ];
 
 // On install, cache all critical static assets
@@ -45,6 +46,31 @@ self.addEventListener('activate', (event) => {
     }).then(() => {
         // Take control of all pages immediately
         return self.clients.claim();
+    })
+  );
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close(); // Close the notification
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((clientList) => {
+      // If a window for the app is already open, focus it.
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise, open a new window.
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
     })
   );
 });

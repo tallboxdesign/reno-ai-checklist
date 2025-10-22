@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import type { Project, ProjectStatus } from '../types';
+import type { Project, ProjectStatus, ChecklistItem as ChecklistItemType } from '../types';
 import ChecklistItem from './ChecklistItem';
 import ImageModal from './ImageModal';
 import ShareModal from './ShareModal';
 import { compressImage } from '../services/imageService';
+import * as notificationService from '../services/notificationService';
 import { CalendarIcon, LinkIcon, TrashIcon, CameraIcon, ShareIcon } from './icons';
 
 interface ProjectCardProps {
@@ -35,6 +36,31 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
     );
     onUpdateProject({ ...project, checklist: updatedChecklist });
   };
+
+  const handleSetReminder = async (itemId: string, reminder: string | null) => {
+    if (reminder) {
+        const hasPermission = await notificationService.requestNotificationPermission();
+        if (!hasPermission) {
+            alert("Notification permission is required to set reminders.");
+            return;
+        }
+    }
+
+    const updatedChecklist = project.checklist.map((item) => {
+        if (item.id === itemId) {
+            const updatedItem: ChecklistItemType = { ...item, reminder: reminder || undefined };
+            if (updatedItem.reminder) {
+                notificationService.scheduleNotification(updatedItem, project);
+            } else {
+                notificationService.cancelNotification(updatedItem.id);
+            }
+            return updatedItem;
+        }
+        return item;
+    });
+
+    onUpdateProject({ ...project, checklist: updatedChecklist });
+  };
   
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value as ProjectStatus;
@@ -48,7 +74,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
         onUpdateProject({ ...project, photo: compressedPhoto });
       } catch (error) {
         console.error("Failed to replace and compress image:", error);
-        // Optionally, show an error to the user
       }
     }
   };
@@ -150,6 +175,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
                     item={item} 
                     onToggle={handleToggleItem}
                     onUpdate={handleUpdateItem}
+                    onSetReminder={handleSetReminder}
                 />
               )) : <p className="text-sm text-zinc-500 dark:text-zinc-400">No checklist items yet.</p>}
             </div>

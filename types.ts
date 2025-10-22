@@ -1,9 +1,9 @@
-
 export interface ChecklistItem {
   id: string;
   task: string;
   completed: boolean;
   details?: string;
+  reminder?: string;
 }
 
 export type ProjectStatus = 'Idea' | 'In Progress' | 'Completed';
