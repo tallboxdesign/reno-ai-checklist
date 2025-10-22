@@ -202,17 +202,17 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg mb-8 max-w-2xl mx-auto border border-slate-200 dark:border-slate-700">
-      <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Create New Project</h2>
+    <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-lg mb-8 max-w-2xl mx-auto border border-zinc-200 dark:border-zinc-800">
+      <h2 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">Create New Project</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-slate-600 dark:text-slate-300">Project Title</label>
+          <label htmlFor="title" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Project Title</label>
           <input
             type="text"
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
+            className="mt-1 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100 disabled:bg-zinc-200 dark:disabled:bg-zinc-700"
             placeholder={isGeneratingTitle ? "Generating title from notes..." : "e.g., Kitchen Renovation"}
             required
             disabled={isGeneratingTitle}
@@ -221,29 +221,29 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
            <div>
-            <label htmlFor="date" className="block text-sm font-medium text-slate-600 dark:text-slate-300">Target Date</label>
+            <label htmlFor="date" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Target Date</label>
             <div className="relative mt-1">
-                <CalendarIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <CalendarIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"/>
                 <input
                 type="date"
                 id="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="pl-10 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100"
+                className="pl-10 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
                 required
                 />
             </div>
            </div>
            <div>
-            <label htmlFor="inspirationLink" className="block text-sm font-medium text-slate-600 dark:text-slate-300">Inspiration Link</label>
+            <label htmlFor="inspirationLink" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Inspiration Link</label>
             <div className="relative mt-1">
-                <LinkIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <LinkIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"/>
                 <input
                 type="url"
                 id="inspirationLink"
                 value={inspirationLink}
                 onChange={(e) => setInspirationLink(e.target.value)}
-                className="pl-10 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100"
+                className="pl-10 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
                 placeholder="https://example.com"
                 />
             </div>
@@ -251,13 +251,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
         </div>
 
         <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-slate-600 dark:text-slate-300">Voice Notes</label>
+            <label htmlFor="notes" className="block text-sm font-medium text-zinc-600 dark:text-zinc-300">Voice Notes</label>
             <textarea
                 id="notes"
                 rows={4}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="mt-1 block w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 text-slate-800 dark:text-slate-100"
+                className="mt-1 block w-full bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500 sm:text-sm p-2 text-zinc-800 dark:text-zinc-100"
                 placeholder="Record your thoughts or type them here..."
             />
         </div>
@@ -266,13 +266,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
             <button
                 type="button"
                 onClick={isRecording ? stopRecording : startRecording}
-                className={`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+                className={`flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${isRecording ? 'bg-rose-600 hover:bg-rose-700' : 'bg-sky-600 hover:bg-sky-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
             >
                 {isRecording ? <StopIcon className="w-5 h-5 mr-2"/> : <MicIcon className="w-5 h-5 mr-2" />}
                 {isRecording ? 'Stop Recording' : 'Record Notes'}
             </button>
 
-            <label htmlFor="photo-upload" className="cursor-pointer flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+            <label htmlFor="photo-upload" className="cursor-pointer flex items-center justify-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md shadow-sm text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700">
                 <CameraIcon className="w-5 h-5 mr-2" />
                 <span>{photo ? 'Change Photo' : 'Add Photo'}</span>
                 <input id="photo-upload" name="photo-upload" type="file" className="sr-only" accept="image/*" onChange={handlePhotoChange} />
@@ -285,13 +285,13 @@ const NewProjectForm: React.FC<NewProjectFormProps> = ({ onAddProject }) => {
           </div>
         )}
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-rose-500 text-sm">{error}</p>}
         
         <div className="pt-2">
           <button
             type="submit"
             disabled={isProcessing || isRecording || isGeneratingTitle}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-slate-400 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:bg-zinc-400 disabled:cursor-not-allowed"
           >
             {isProcessing ? 'Generating...' : '✨ Generate AI Checklist'}
           </button>
