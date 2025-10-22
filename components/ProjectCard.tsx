@@ -3,6 +3,7 @@ import type { Project, ProjectStatus, ChecklistItem as ChecklistItemType } from 
 import ChecklistItem from './ChecklistItem';
 import ImageModal from './ImageModal';
 import ShareModal from './ShareModal';
+import SuggestionsModal from './SuggestionsModal';
 import { compressImage } from '../services/imageService';
 import * as notificationService from '../services/notificationService';
 import { CalendarIcon, LinkIcon, TrashIcon, CameraIcon, ShareIcon } from './icons';
@@ -22,6 +23,7 @@ const statusStyles: Record<ProjectStatus, string> = {
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onDeleteProject }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [suggestionsModalItem, setSuggestionsModalItem] = useState<ChecklistItemType | null>(null);
   
   const handleToggleItem = (itemId: string) => {
     const updatedChecklist = project.checklist.map((item) =>
@@ -60,6 +62,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
     });
 
     onUpdateProject({ ...project, checklist: updatedChecklist });
+  };
+
+  const handleOpenSuggestionsModal = (itemId: string) => {
+    const itemToSuggest = project.checklist.find(item => item.id === itemId);
+    if (itemToSuggest) {
+      setSuggestionsModalItem(itemToSuggest);
+    }
   };
   
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -176,6 +185,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
                     onToggle={handleToggleItem}
                     onUpdate={handleUpdateItem}
                     onSetReminder={handleSetReminder}
+                    onSuggest={handleOpenSuggestionsModal}
                 />
               )) : <p className="text-sm text-zinc-500 dark:text-zinc-400">No checklist items yet.</p>}
             </div>
@@ -219,6 +229,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onUpdateProject, onD
       )}
       {isShareModalOpen && (
         <ShareModal project={project} onClose={() => setIsShareModalOpen(false)} />
+      )}
+      {suggestionsModalItem && (
+        <SuggestionsModal 
+          project={project} 
+          item={suggestionsModalItem} 
+          onClose={() => setSuggestionsModalItem(null)} 
+        />
       )}
     </>
   );

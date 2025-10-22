@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { ChecklistItem as ChecklistItemType } from '../types';
-import { BellIcon } from './icons';
+import { BellIcon, SparklesIcon } from './icons';
 
 interface ChecklistItemProps {
   item: ChecklistItemType;
   onToggle: (id: string) => void;
   onUpdate: (id: string, updates: { task: string; details?: string }) => void;
   onSetReminder: (id: string, reminder: string | null) => void;
+  onSuggest: (id: string) => void;
 }
 
-const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, onUpdate, onSetReminder }) => {
+const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, onUpdate, onSetReminder, onSuggest }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [task, setTask] = useState(item.task);
   const [details, setDetails] = useState(item.details || '');
@@ -131,13 +132,22 @@ const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, onUpdate,
           )}
         </div>
          {!item.completed && (
+           <div className="flex items-center">
+             <button
+                onClick={() => onSuggest(item.id)}
+                className="ml-2 p-1.5 rounded-full text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                aria-label="Get AI suggestions"
+             >
+                <SparklesIcon className="w-4 h-4" />
+             </button>
             <button 
                 onClick={() => setIsSettingReminder(!isSettingReminder)} 
-                className={`ml-2 p-1.5 rounded-full transition-colors ${item.reminder ? 'text-sky-500 bg-sky-100 dark:bg-sky-500/10' : 'text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                className={`ml-1 p-1.5 rounded-full transition-colors ${item.reminder ? 'text-sky-500 bg-sky-100 dark:bg-sky-500/10' : 'text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 aria-label="Set reminder"
             >
                 <BellIcon className="w-4 h-4" />
             </button>
+           </div>
         )}
       </div>
         {isSettingReminder && !item.completed && (

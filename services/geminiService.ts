@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { ChecklistItem } from '../types';
+import type { ChecklistItem, Project } from '../types';
 
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable is not set");
@@ -147,5 +147,28 @@ export const estimateProjectCost = async (title: string, notes: string, details:
   } catch (error) {
     console.error("Error estimating project cost:", error);
     throw new Error("Failed to estimate cost. The AI may not have been able to provide an estimate for this project.");
+  }
+};
+
+export const getAISuggestions = async (project: Project, item: ChecklistItem, suggestionType: 'variations' | 'materials'): Promise<string> => {
+  try {
+    const basePrompt = `You are an expert renovation advisor. For a project titled "${project.title}" with the notes "${project.notes}", I need suggestions for the following task:
+Task: ${item.task}
+${item.details ? `Details: ${item.details}` : ''}
+`;
+
+    const finalPrompt = suggestionType === 'variations'
+      ? `${basePrompt}\nPlease suggest 3-4 creative variations or alternative approaches to this task. Keep the suggestions concise and present them as a bulleted or numbered list.`
+      : `${basePrompt}\nPlease suggest 2-3 alternative materials for this task. For each material, briefly mention its pros and cons. Format the response clearly with headings for each material.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: finalPrompt,
+    });
+
+    return response.text.trim();
+  } catch (error) {
+    console.error("Error getting AI suggestions:", error);
+    throw new Error("Failed to get suggestions from the AI. Please try again.");
   }
 };

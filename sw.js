@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reno-ai-checklist-v7'; // Bumped version for update
+const CACHE_NAME = 'reno-ai-checklist-v8'; // Bumped version for update
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -13,10 +13,11 @@ const STATIC_ASSETS = [
   '/components/ProjectCard.tsx',
   '/components/ImageModal.tsx',
   '/components/ShareModal.tsx',
+  '/components/SuggestionsModal.tsx', // Added new component
   '/services/dbService.ts',
   '/services/geminiService.ts',
   '/services/imageService.ts',
-  '/services/notificationService.ts' // Added new service
+  '/services/notificationService.ts'
 ];
 
 // On install, cache all critical static assets
